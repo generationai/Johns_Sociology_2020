@@ -1,0 +1,315 @@
+---
+title: "When to Use Linear Regression"
+author: 'In this lesson:'
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(kableExtra)
+```
+
+# Benefits of Linear Regression
+
+How do I decide what kind of car to buy? Or what kind of house? Using machine learning tools such as linear regression can help make these decisions easier by using a data-driven method of evaluation.
+
+However, not all datasets are a good fit for linear regression. In this lesson, you will examine two datasets: one about cars, and one about housing. This lesson will help you identify what kinds of datasets can be used for linear regression to ensure you have a good predictive model.
+
+# What is Linear Regression?
+
+Linear regression is the most common type of machine learning algorithm. The algorithm will predict new values by determining the relationship between the data fed into the algorithm.
+
+More information about linear regression can be found in the intermediate lesson.
+
+# Understanding the Data 
+
+The first dataset is on car performance and was extracted from the 1974 Motor Trend US magazine. It comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models).
+
+>Can we predict the mpg based on other characteristics?
+
+Here is the data recorded:
+
+-	mpg:	Miles/(US) gallon
+-	disp:	Displacement (cu.in.)
+-	hp:	Gross horsepower
+-	drat:	Rear axle ratio
+-	wt:	Weight (1000 lbs)
+-	qsec:	1/4 mile time
+-	vs:	Engine (0 = V-shaped, 1 = straight)
+-	am:	Transmission (0 = automatic, 1 = manual)
+-	gear:	Number of forward gears
+-	carb:	Number of carburetors
+
+```{r, echo=FALSE}
+#cars data
+c <- head(mtcars)
+#make the data frame into a nice-looking table to output
+kable(c, booktabs=T)%>% 
+  #row_spec(0,bold=FALSE) %>% 
+  kable_styling(font_size = 12)
+```
+
+The second dataset is on house prices and was extracted as a practice dataset from the following source: https://www.kaggle.com/egebozoglu/house-price-linear-regression. This dataset includes the cost of houses and 18 aspects of home design and location in Seattle, Washington, from 2014 to 2015.
+
+>Can we predict the cost of a house based on other characteristics?
+
+Here is the data recorded:
+
+- id: House identifying number
+- price: House price (USD)
+- bedrooms: Number of bedrooms
+- bathrooms: Number of bathrooms
+- sqft_living: Area (ft^2) of the living room
+- sqft_lot: Area (ft^2) of the property
+- floors: Ranking of floor quality (1-3.5)
+- waterfront: Is the house on the waterfront (1=Yes, 0=No)
+- view: Does the house have a nice view, ranking 0-4
+- condition: Ranking of house condition (1-5)
+- grade: Ranking of house quality (1-13)
+- sqft_above: Area (ft^2) upstairs
+- sqft_basement: Area (ft^2) of the basement
+- yr_built: Year the house was built
+- yr_renovated: Year the house was renovated
+- zipcode: Residential zipcode
+- lat: Latitudinal position of the house
+- long: Longitudinal position of the house
+- sqft_living15: Area (ft^2) of the property in 2015
+- sqft_lot15: Area (ft^2) of the property in 2015
+
+```{r, echo=FALSE}
+#housing data
+x <- read.csv("housePractice.csv")
+#drop date column
+x$date <- NULL
+#make the data frame into a nice-looking table to output
+kable(head(x), booktabs=T)%>% 
+  #row_spec(0,bold=FALSE) %>% 
+  kable_styling(font_size = 12)
+```
+
+# Missing Data
+
+The first step in cleaning a dataset is ensuring that there is not any data missing from the dataset. Missing data is when there are any rows in the table that are not filled with a value. Our datasets do not have any missing data, so nothing needs to be changed.
+
+More information on how to address missing data can be found in the intermediate lesson.
+
+```{r, echo=FALSE}
+#check for missing data by examining this data table
+missing_data_c <- c[rowSums(is.na(c)) > 0,]
+missing_c = nrow(missing_data_c)
+#cat("There are", missing_c, "rows with missing data from the cars dataset.")
+missing_data <- x[rowSums(is.na(x)) > 0,]
+missing = nrow(missing_data)
+#cat("There are", missing, "rows with missing data from the housing dataset.")
+```
+
+# Establishing Linear Relationships
+
+The next step in deciding whether or not a dataset is good for linear regression is to examine whether there are linear relationships between the different parameters.
+
+You can use the tool below to examine the relationship between any two variables in the datasets.
+
+First, let's look at the cars dataset. Start by selecting mpg as variable 1. Then, change variable 2 and look for correlations.
+
+```{r, echo = FALSE, fig.width=2, fig.height = 2}
+library(shiny)
+library(ggplot2)
+data(mtcars) 
+ui <- fluidPage( 
+    varSelectInput("var1", "Variable 1", data = mtcars),
+    varSelectInput("var2", "Variable 2", data = mtcars), 
+    plotOutput("plot") 
+)
+
+server <- function(input, output){
+    output$plot <- renderPlot({
+        ggplot(mtcars, aes(x = !!input$var1, y = !!input$var2)) +
+            geom_point()
+    }, width = "auto", height = "auto")
+} 
+
+shinyApp(ui = ui, server = server)
+```
+
+>Q1: What correlations do you see with mpg?
+
+Next, let's look at the housing dataset. Start by selecting price as variable 1. Then, change variable 2 and look for correlations.
+
+```{r, echo = FALSE, fig.width=2, fig.height = 2}
+#data(x)
+ui <- fluidPage( 
+    varSelectInput("var1", "Variable 1", data = x),
+    varSelectInput("var2", "Variable 2", data = x), 
+    plotOutput("plot") 
+)
+
+server <- function(input, output){
+    output$plot <- renderPlot({
+        ggplot(x, aes(x = !!input$var1, y = !!input$var2)) +
+            geom_point()
+    })
+} 
+
+shinyApp(ui = ui, server = server)
+```
+
+>Q2: What correlations do you see with price?
+
+>Q3: Why is some data scattered, but others form lines?
+
+Now play around with this tool, changing variable 1 and variable 2 for both the cars and housing datasets.
+
+>Q4: What other correlations can you find?
+
+Next, you can examine the strength of the correlations between each of the variables.
+
+The plots below shows all of the variables plotted against one another. The size and darkness of a circle indicate the strength of correlation between the two variables. Blue symbolizes a positive correlation, while red symbolizes a negative correlation.
+
+To examine a specific correlation, choose the box you want to examine and follow the row to the left of the box and the column above the box. This will direct you to the two labels, and therefore the two variables that have a certain correlation.
+
+
+
+```{r, echo=FALSE}
+res <- cor(mtcars)
+#install.packages("corrplot")
+library(corrplot)
+corrplot(res, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45, title = "Cars", mar=c(0,0,2,0))
+```
+
+
+
+```{r, echo=FALSE}
+res <- cor(x)
+#install.packages("corrplot")
+library(corrplot)
+corrplot(res, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45, title = "Housing", mar=c(0,0,2,0))
+```
+
+First, look at the correlation plot for the cars dataset. Let's look specifically at mpg. Start at the top label 'mpg', and move down the column.
+
+>Q5: Do you see any strong correlations with mpg in this column?
+
+Now, start at the 'mpg' label on the left, and work your way across to the right.
+
+>Q6: Do you see any strong correlations with mpg in this row?
+
+There are a lot of strong correlations with mpg, so let's examine the relationship between mph and rear axle ratio. But first, let's examine the correlation plot for the housing dataset. Look specifically at price. Start at the top label 'price', and move down the column.
+
+>Q7: Do you see any strong correlations with price in this column?
+
+Now, start at the 'price' label on the left, and work your way across to the right.
+
+>Q8: Do you see any strong correlations with price in this row?
+
+It appears the strongest correlation with price is sqft_living, so let's examine this relationship a little bit more.
+
+# Outliers and High-Leverage Points
+
+The next step in cleaning our data is removing any outliers or high-leverage points.
+
+>An outlier is a data point that has an extreme y-value, and a high leverage point is a data point that has an extreme x-value.
+
+Examples of the dataset before and after removing significant outliers and high leverage points are shown below.
+
+```{r, echo=FALSE}
+#Looking for outliers
+#.std.resid > |3|
+#.hat > 0.0001850652
+#.cooksd > 0.0001850824
+#install.packages("tidyverse")
+#install.packages("broom")
+library(tidyverse)
+library(broom)
+theme_set(theme_classic())
+model <- lm(price ~ sqft_living, data = x)
+model.diag.metrics <- augment(model)
+#drop the columns we're not examining the decrease confusion
+model.diag.metrics$.fitted <- NULL
+model.diag.metrics$.se.fit <- NULL
+model.diag.metrics$.resid <- NULL
+model.diag.metrics$.sigma <- NULL
+outliers <- model.diag.metrics %>%
+  filter(.std.resid > 3 | .std.resid < -3 | .hat > 0.0001850652 & .cooksd > 0.0001850824)
+#kable(head(outliers), booktabs=T)%>% 
+  #row_spec(0,bold=FALSE) %>% 
+#  kable_styling(font_size = 12)
+x_clean <- anti_join(x, outliers, by = c("price","sqft_living"))
+
+cars_model <- lm(mpg ~ drat, data = mtcars)
+cars_model.diag.metrics <- augment(cars_model)
+
+outliers_cars <- cars_model.diag.metrics %>%
+  filter(.std.resid > 3 | .std.resid < -3 | .hat > 0.125 & .cooksd > 0.133333)
+mtcars_clean <- anti_join(mtcars, outliers_cars, by = c("mpg","drat"))
+```
+
+```{r}
+ggplot(model, aes(sqft_living, price)) +
+  geom_point() +
+  stat_smooth(method = lm, se = FALSE)
+
+model_clean <- lm(price ~ sqft_living, data = x_clean)
+model_clean.diag.metrics <- augment(model_clean)
+
+ggplot(model_clean, aes(sqft_living, price)) +
+  geom_point() +
+  stat_smooth(method = lm, se = FALSE)
+```
+
+More information about outliers and high leverage points can be found in the intermediate lesson.
+
+# Four Assumptions of Linear Regression
+
+There are obviously correlations within this dataset, but that doesn't necessarily mean that this data can be used for linear regression.
+
+In order to use linear regression on a dataset, four assumptions about the data must be true:
+1. Linearity of the data
+2. Normality of the residuals
+3. Homogeneity of residuals variance
+4. Independence of residuals error terms
+
+You can read more about these four assumptions at the following websites, or in the intermediate lesson:
+
+http://www.sthda.com/english/articles/39-regression-model-diagnostics/161-linear-regression-assumptions-and-diagnostics-in-r-essentials/
+
+https://blog.uwgb.edu/bansalg/statistics-data-analytics/linear-regression/what-are-the-four-assumptions-of-linear-regression/
+
+These assumptions were all checked for this data set, and it was found that the cars dataset meets all of the requirements while the housing dataset does not.
+
+# What Does This Mean?
+
+We can draw the conclusion that even though there is a visible correlation in the housing data, the housing dataset is not a good dataset to model using linear regression. This is likely due to the increased number of datapoints clustered together towards the left side of the x-axis. We can demonstrate this by actually performing linear regression on each of these datasets.
+
+Here are the results from a linear regression model for the cars and housing datasets: 
+
+```{r, echo=FALSE}
+ggplot(cars_model, aes(drat, mpg), title = "Cars") +
+  geom_point() +
+  stat_smooth(method = lm, se = FALSE)
+summary(cars_model)
+
+ggplot(model_clean, aes(sqft_living, price), title = "Housing") +
+  geom_point() +
+  stat_smooth(method = lm, se = FALSE)
+summary(model_clean)
+```
+
+An explanation of each of the result parameters can be found here: http://www.learnbymarketing.com/tutorials/linear-regression-in-r/#:~:text=lm()%20Function-,Linear%20Regression%20Example%20in%20R%20using%20lm()%20Function,variable%20from%20your%20new%20model.
+
+Let's specifically look at the r-squared value. For linear regression involving only one independent variable, there is not much difference between the multiple and adjusted r-squared values. The r-squared values indicate the strength of the correlation between the x and y variables. The closer the r-squared value is to 1, the more accurate the model is. If the r-squared value is closer to 0, there is a weaker correlation. Notice that in this case, the r-squared values of both models are very similar.
+
+>Just because a correlation is present, does not mean that you should use linear regression
+
+# Conclusion
+
+Linear regression can be a useful tool in predicting the cost of your home or what kind of car you should buy. However, in order to develop an accurate model, a set of requirements must be met.
+
+>Lesson materials prepared by Cortland Johns, MITRE
